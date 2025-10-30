@@ -1,25 +1,61 @@
 #!/usr/bin/env nu
 
-# Format Nushell code with intelligent line wrapping
+# Format Nushell code with intelligent line wrapping from a file
 #
 # This command formats Nushell code by wrapping long lines at semantically
 # appropriate points (pipelines and assignments) before applying topiary formatting.
-# It can read from a file or from stdin.
 #
 # Examples:
 #   # Format a file
-#   nufmt my-script.nu
+#   nufmt format my-script.nu
 #
 #   # Format with custom max width
-#   nufmt --max-width 80 my-script.nu
+#   nufmt format --max-width 80 my-script.nu
 #
-#   # Format from stdin
-#   cat script.nu | nufmt
-export def main [
+#   # When used as a script
+#   nu nufmt/mod.nu my-script.nu
+export def --env main [
+  file: path # Path to the Nushell file to format
   --max-width: int = 100 # Maximum line width before wrapping (default: 100)
-  file?: path # Path to the Nushell file to format (reads from stdin if not provided)
-]: nothing -> string {
-  let code = if $file != null { open $file } else { $in }
+] {
+  format $file --max-width $max_width
+}
+
+# Format Nushell code with intelligent line wrapping from a file
+#
+# This is the main formatting function that wraps long lines and applies topiary.
+export def format [
+  file: path # Path to the Nushell file to format
+  --max-width: int = 100 # Maximum line width before wrapping (default: 100)
+] {
+  let code = open $file
+
+  # Parse AST to identify wrappable structures
+  let ast_data = ($code | default "" | ast --json $in)
+
+  # Extract pipeline locations, let statements, etc
+  # Insert strategic breaks based on AST nodes
+
+  $code | wrap-pipelines $max_width
+  | wrap-assignments $max_width
+  | topiary format -l nu -t
+}
+
+# Format Nushell code with intelligent line wrapping from stdin
+#
+# This command formats Nushell code by wrapping long lines at semantically
+# appropriate points (pipelines and assignments) before applying topiary formatting.
+#
+# Examples:
+#   # Format from stdin
+#   cat script.nu | nufmt format-stdin
+#
+#   # Format with custom max width
+#   open script.nu | nufmt format-stdin --max-width 80
+export def format-stdin [
+  --max-width: int = 100 # Maximum line width before wrapping (default: 100)
+]: string -> string {
+  let code = $in
 
   # Parse AST to identify wrappable structures
   let ast_data = ($code | default "" | ast --json $in)

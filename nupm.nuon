@@ -1,0 +1,9 @@
+{
+  name: nufmt
+  type: module
+  version: "0.1.0"
+  description: "AST-aware Nushell code formatter with intelligent line wrapping"
+  license: "MIT"
+  authors: ["Benjamin Foreman"]
+}
+
