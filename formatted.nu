@@ -59,7 +59,11 @@ def nu-persist [...names] {
 
   $names | each {|name|
     let source = try { view source $name } catch { return }
-    $"# persisted (date now | format date '%Y-%m-%d %H:%M')\n($source)\n" | save --append $persist_file
+    $"# persisted (
+      date now
+      | format date '%Y-%m-%d %H:%M'
+    )\n($source)\n"
+    | save --append $persist_file
   }
 
   let config_file = $nu.default-config-dir | path join "config.nu"
@@ -70,11 +74,28 @@ def nu-persist [...names] {
   }
 }
 
-def tokc [] { match ($in | to text) { "" => 0 $text => (http post -t application/json -H {'x-api-key': (^security find-generic-password -s ANTHROPIC_API_KEY -w) 'anthropic-version': '2023-06-01'} https://api.anthropic.com/v1/messages/count_tokens {model: 'claude-sonnet-4-5-20250929' messages: [{role: user content: $text}]} | get input_tokens)} }
+def tokc [] {
+  match (
+    $in
+    | to text
+  ) {
+    "" => 0
+    $text => (
+      http post -t application/json -H {'x-api-key': (^security find-generic-password -s ANTHROPIC_API_KEY -w) 'anthropic-version': '2023-06-01'} https://api.anthropic.com/v1/messages/count_tokens {model: 'claude-sonnet-4-5-20250929' messages: [{role: user content: $text}]}
+      | get input_tokens
+    )
+  }
+}
 
 def most-recent [dir: path = .] { ls $dir | sort-by modified | last | get name }
 
-def choose-starship-preset [] { ^starship preset --list | lines | input list | ^starship preset $in | save -f ~/.config/starship.toml }
+def choose-starship-preset [] {
+  ^starship preset --list
+  | lines
+  | input list
+  | ^starship preset $in
+  | save -f ~/.config/starship.toml
+}
 
 def --env y [...args] {
   let tmp = (mktemp -t "yazi-cwd.XXXXXX")
